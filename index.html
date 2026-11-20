@@ -1,0 +1,134 @@
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>THE NUN 3D</title>
+<style>
+body{margin:0;overflow:hidden;background:#050505;font-family:Arial}
+#hud{position:fixed;top:15px;left:15px;color:white;z-index:2}
+#controls{position:fixed;bottom:25px;width:100%;display:flex;justify-content:center;gap:18px;z-index:3}
+button{background:#222;color:white;border:2px solid #777;border-radius:14px;padding:17px;font-size:20px}
+</style>
+</head>
+<body>
+<div id="hud">THE NUN 3D<br>MONASTERO MALEDETTO</div>
+<div id="controls">
+<button id="left">◀</button>
+<button id="forward">▲</button>
+<button id="right">▶</button>
+</div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x050505);
+scene.fog=new THREE.Fog(0x050505,4,32);
+
+const camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.1,100);
+camera.position.set(0,1.7,5);
+
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+document.body.appendChild(renderer.domElement);
+
+scene.add(new THREE.AmbientLight(0x777777,0.35));
+
+const wall=new THREE.MeshStandardMaterial({color:0x292522});
+const floorMat=new THREE.MeshStandardMaterial({color:0x171717});
+const dark=new THREE.MeshStandardMaterial({color:0x080808});
+
+function block(x,y,z,w,h,d,mat){
+const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
+m.position.set(x,y,z);
+scene.add(m);
+return m;
+}
+
+// Pavimento e soffitto
+block(0,-0.15,-12,8,0.3,40,floorMat);
+block(0,4,-12,8,0.3,40,wall);
+
+// Pareti del monastero
+block(-4,2,-12,0.3,4,40,wall);
+block(4,2,-12,0.3,4,40,wall);
+
+// Porte laterali
+for(let z=-3;z>-32;z-=7){
+block(-3.82,1.4,z,0.12,2.8,1.5,dark);
+block(3.82,1.4,z-3,0.12,2.8,1.5,dark);
+}
+
+// Colonne
+for(let z=0;z>-35;z-=6){
+block(-3.3,2,z,0.5,4,0.5,wall);
+block(3.3,2,z,0.5,4,0.5,wall);
+}
+
+// Luci inquietanti
+for(let z=2;z>-30;z-=8){
+const light=new THREE.PointLight(0xffbd75,2,9);
+light.position.set(0,3.5,z);
+scene.add(light);
+block(0,3.75,z,0.6,0.08,0.6,
+new THREE.MeshBasicMaterial({color:0xffbd75}));
+}
+
+// Ombra misteriosa in fondo
+const robe=new THREE.Mesh(
+new THREE.ConeGeometry(0.65,2.4,8),
+dark
+);
+robe.position.set(0,1.2,-29);
+scene.add(robe);
+
+const head=new THREE.Mesh(
+new THREE.SphereGeometry(0.32,12,12),
+dark
+);
+head.position.set(0,2.65,-29);
+scene.add(head);
+
+// Movimento
+let moving=false;
+let turning=0;
+let angle=0;
+
+function hold(id,fn){
+const b=document.getElementById(id);
+b.addEventListener('pointerdown',e=>{
+e.preventDefault();fn(true);
+});
+b.addEventListener('pointerup',()=>fn(false));
+b.addEventListener('pointerleave',()=>fn(false));
+b.addEventListener('pointercancel',()=>fn(false));
+}
+hold('forward',v=>moving=v);
+hold('left',v=>turning=v?-1:0);
+hold('right',v=>turning=v?1:0);
+
+function animate(){
+requestAnimationFrame(animate);
+angle+=turning*0.035;
+camera.rotation.y=angle;
+if(moving){
+camera.position.x-=Math.sin(angle)*0.055;
+camera.position.z-=Math.cos(angle)*0.055;
+}
+camera.position.x=Math.max(-3,Math.min(3,camera.position.x));
+camera.position.z=Math.max(-34,Math.min(5,camera.position.z));
+renderer.render(scene,camera);
+}
+animate();
+
+addEventListener('resize',()=>{
+camera.aspect=innerWidth/innerHeight;
+camera.updateProjectionMatrix();
+renderer.setSize(innerWidth,innerHeight);
+});
+</script>
+</body>
+</html>
